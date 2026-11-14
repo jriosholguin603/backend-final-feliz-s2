@@ -1,5 +1,6 @@
 package com.example;
 
+import java.awt.Component;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -9,19 +10,6 @@ import com.example.model.Clientes;
 import com.example.model.DetallePedido;
 import com.example.model.Pedidos;
 import com.example.model.Usuario;
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
 
 @PageTitle("Gestión CRUD - Sistema de Pedidos")
 @Route("")
@@ -404,9 +392,9 @@ public class MainView extends VerticalLayout {
         return layout;
     }
 
-    // ==========================================
-    // 4. SECCIÓN USUARIOS
-    // ==========================================
+    /**
+     * @return
+     */
     private Component crearSeccionUsuarios() {
         VerticalLayout layout = new VerticalLayout();
         layout.setPadding(false);
@@ -425,8 +413,6 @@ public class MainView extends VerticalLayout {
 
         idField.setReadOnly(true);
 
-        FormLayout form = new FormLayout(idField, nombreField, apellidoField, emailField, telefonoField, direccionField, rolField, estadoField);
-
         Grid<Usuario> grid = new Grid<>(Usuario.class, false);
         grid.addColumn(Usuario::getId).setHeader("ID").setAutoWidth(true);
         grid.addColumn(Usuario::getNombre).setHeader("Nombre").setAutoWidth(true);
@@ -436,3 +422,24 @@ public class MainView extends VerticalLayout {
         grid.addColumn(Usuario::getRol).setHeader("Rol").setAutoWidth(true);
         grid.addColumn(Usuario::getEstado).setHeader("Estado").setAutoWidth(true);
         grid.addColumn(Usuario
+
+    /**
+     * 
+     */
+    private void setSizeFull() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    private void setPadding(boolean b) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    private void setSpacing(boolean b) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    private static class Grid<T> {
+
+        public Grid() {
+        }
+    }
