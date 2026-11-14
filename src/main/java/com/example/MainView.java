@@ -1,9 +1,14 @@
-
 package com.example;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.model.Clientes;
+import com.example.model.DetallePedido;
+import com.example.model.Pedidos;
+import com.example.model.Usuario;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -18,9 +23,14 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
-@PageTitle("Gestión CRUD - Sistema de Inventario")
+@PageTitle("Gestión CRUD - Sistema de Pedidos")
 @Route("")
 public class MainView extends VerticalLayout {
+
+    private long clienteIdCounter = 1;
+    private long pedidoIdCounter = 1;
+    private long detalleIdCounter = 1;
+    private long usuarioIdCounter = 1;
 
     public MainView() {
         setSizeFull();
@@ -30,182 +40,399 @@ public class MainView extends VerticalLayout {
         TabSheet tabs = new TabSheet();
         tabs.setWidthFull();
 
-        tabs.add("Productos", crearSeccion(
-                "Código", "Producto", "Descripción", "Precio"));
+        tabs.add("Clientes", crearSeccionClientes());
+        tabs.add("Pedidos", crearSeccionPedidos());
+        tabs.add("Detalle Pedido", crearSeccionDetallePedido());
+        tabs.add("Usuarios", crearSeccionUsuarios());
 
-        tabs.add("Categorías", crearSeccion(
-                "ID", "Nombre", "Descripción"));
-
-        tabs.add("Proveedores", crearSeccion(
-                "ID", "Nombre", "Contacto", "Teléfono", "Email", "Dirección"));
-
-        tabs.add("Usuarios", crearSeccion(
-                "ID", "Nombre", "Apellido", "Email",
-                "Teléfono", "Dirección", "Rol", "Estado"));
-
-        add(new H2("Sistema de Inventario - CRUD"), tabs);
+        add(new H2("Sistema de Gestión - CRUD"), tabs);
     }
 
-    private Component crearSeccion(String... nombresCampos) {
-
+    // ==========================================
+    // 1. SECCIÓN CLIENTES
+    // ==========================================
+    private Component crearSeccionClientes() {
         VerticalLayout layout = new VerticalLayout();
         layout.setPadding(false);
         layout.setSizeFull();
 
-        List<String[]> registros = new ArrayList<>();
+        List<Clientes> lista = new ArrayList<>();
 
-        TextField[] campos = new TextField[nombresCampos.length];
+        TextField idField = new TextField("ID");
+        TextField nombreField = new TextField("Nombre");
+        TextField apellidoField = new TextField("Apellido");
+        TextField emailField = new TextField("Email");
+        TextField telefonoField = new TextField("Teléfono");
+        TextField direccionField = new TextField("Dirección");
+        TextField estadoField = new TextField("Estado");
 
-        for (int i = 0; i < nombresCampos.length; i++) {
-            campos[i] = new TextField(nombresCampos[i]);
-        }
+        idField.setReadOnly(true); // El ID es autogenerado
 
-        FormLayout form = new FormLayout();
-        form.add(campos);
+        FormLayout form = new FormLayout(idField, nombreField, apellidoField, emailField, telefonoField, direccionField, estadoField);
 
-        Grid<String[]> grid = new Grid<>();
-        grid.setWidthFull();
+        Grid<Clientes> grid = new Grid<>(Clientes.class, false);
+        grid.addColumn(Clientes::getId).setHeader("ID").setAutoWidth(true);
+        grid.addColumn(Clientes::getNombre).setHeader("Nombre").setAutoWidth(true);
+        grid.addColumn(Clientes::getApellido).setHeader("Apellido").setAutoWidth(true);
+        grid.addColumn(Clientes::getEmail).setHeader("Email").setAutoWidth(true);
+        grid.addColumn(Clientes::getTelefono).setHeader("Teléfono").setAutoWidth(true);
+        grid.addColumn(Clientes::getDireccion).setHeader("Dirección").setAutoWidth(true);
+        grid.addColumn(Clientes::getEstado).setHeader("Estado").setAutoWidth(true);
+        grid.addColumn(Clientes::getFechaRegistro).setHeader("Fecha Registro").setAutoWidth(true);
 
-        for (int i = 0; i < nombresCampos.length; i++) {
-            final int columna = i;
-            grid.addColumn(fila -> fila[columna])
-                    .setHeader(nombresCampos[i])
-                    .setAutoWidth(true);
-        }
-
-        grid.setItems(registros);
+        grid.setItems(lista);
 
         grid.asSingleSelect().addValueChangeListener(event -> {
-            String[] seleccionado = event.getValue();
-
-            if (seleccionado != null) {
-                for (int i = 0; i < campos.length; i++) {
-                    campos[i].setValue(seleccionado[i]);
-                }
+            Clientes c = event.getValue();
+            if (c != null) {
+                idField.setValue(c.getId() != null ? c.getId().toString() : "");
+                nombreField.setValue(c.getNombre() != null ? c.getNombre() : "");
+                apellidoField.setValue(c.getApellido() != null ? c.getApellido() : "");
+                emailField.setValue(c.getEmail() != null ? c.getEmail() : "");
+                telefonoField.setValue(c.getTelefono() != null ? c.getTelefono() : "");
+                direccionField.setValue(c.getDireccion() != null ? c.getDireccion() : "");
+                estadoField.setValue(c.getEstado() != null ? c.getEstado() : "");
             }
         });
 
         Button btnCrear = new Button("Crear", event -> {
-
-            String[] nuevo = obtenerDatos(campos);
-
-            if (nuevo[0].trim().isEmpty()) {
-                Notification.show("El ID o código es obligatorio");
+            if (nombreField.isEmpty()) {
+                Notification.show("El nombre es obligatorio");
                 return;
             }
-
-            if (buscarRegistro(registros, nuevo[0]) != null) {
-                Notification.show("Ese ID o código ya existe");
-                return;
-            }
-
-            registros.add(nuevo);
-            grid.setItems(registros);
-
-            Notification.show("Registro creado correctamente");
+            Clientes c = new Clientes(
+                clienteIdCounter++,
+                nombreField.getValue().trim(),
+                apellidoField.getValue().trim(),
+                emailField.getValue().trim(),
+                telefonoField.getValue().trim(),
+                direccionField.getValue().trim(),
+                estadoField.getValue().trim(),
+                LocalDateTime.now()
+            );
+            lista.add(c);
+            grid.setItems(lista);
+            limpiarCampos(idField, nombreField, apellidoField, emailField, telefonoField, direccionField, estadoField);
+            Notification.show("Cliente creado correctamente");
         });
-
         btnCrear.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         Button btnConsultar = new Button("Consultar", event -> {
-
-            String id = campos[0].getValue().trim();
-
-            String[] encontrado = buscarRegistro(registros, id);
-
+            Long id = parseLong(idField.getValue());
+            if (id == null) {
+                Notification.show("Selecciona o ingresa un ID válido");
+                return;
+            }
+            Clientes encontrado = lista.stream().filter(x -> x.getId().equals(id)).findFirst().orElse(null);
             if (encontrado != null) {
                 grid.asSingleSelect().setValue(encontrado);
-                Notification.show("Registro encontrado");
+                Notification.show("Cliente encontrado");
             } else {
-                Notification.show("No se encontró el registro");
+                Notification.show("No se encontró el cliente");
             }
         });
 
         Button btnActualizar = new Button("Actualizar", event -> {
-
-            String id = campos[0].getValue().trim();
-
-            String[] encontrado = buscarRegistro(registros, id);
-
+            Long id = parseLong(idField.getValue());
+            Clientes encontrado = lista.stream().filter(x -> x.getId().equals(id)).findFirst().orElse(null);
             if (encontrado == null) {
-                Notification.show("No se encontró el registro");
+                Notification.show("Selecciona un cliente de la tabla para actualizar");
                 return;
             }
+            encontrado.setNombre(nombreField.getValue().trim());
+            encontrado.setApellido(apellidoField.getValue().trim());
+            encontrado.setEmail(emailField.getValue().trim());
+            encontrado.setTelefono(telefonoField.getValue().trim());
+            encontrado.setDireccion(direccionField.getValue().trim());
+            encontrado.setEstado(estadoField.getValue().trim());
 
-            String[] nuevosDatos = obtenerDatos(campos);
-
-            int posicion = registros.indexOf(encontrado);
-            registros.set(posicion, nuevosDatos);
-
-            grid.setItems(registros);
-            Notification.show("Registro actualizado correctamente");
+            grid.setItems(lista);
+            Notification.show("Cliente actualizado correctamente");
         });
 
         Button btnEliminar = new Button("Eliminar", event -> {
-
-            String id = campos[0].getValue().trim();
-
-            String[] encontrado = buscarRegistro(registros, id);
-
+            Long id = parseLong(idField.getValue());
+            Clientes encontrado = lista.stream().filter(x -> x.getId().equals(id)).findFirst().orElse(null);
             if (encontrado == null) {
-                Notification.show("No se encontró el registro");
+                Notification.show("No se encontró el cliente a eliminar");
                 return;
             }
-
-            registros.remove(encontrado);
-            grid.setItems(registros);
-
-            limpiar(campos);
+            lista.remove(encontrado);
+            grid.setItems(lista);
+            limpiarCampos(idField, nombreField, apellidoField, emailField, telefonoField, direccionField, estadoField);
             grid.asSingleSelect().clear();
-
-            Notification.show("Registro eliminado correctamente");
+            Notification.show("Cliente eliminado correctamente");
         });
-
         btnEliminar.addThemeVariants(ButtonVariant.LUMO_ERROR);
 
         Button btnLimpiar = new Button("Limpiar", event -> {
-            limpiar(campos);
+            limpiarCampos(idField, nombreField, apellidoField, emailField, telefonoField, direccionField, estadoField);
             grid.asSingleSelect().clear();
         });
 
-        HorizontalLayout acciones = new HorizontalLayout(
-                btnCrear, btnConsultar, btnActualizar,
-                btnEliminar, btnLimpiar
-        );
-
+        HorizontalLayout acciones = new HorizontalLayout(btnCrear, btnConsultar, btnActualizar, btnEliminar, btnLimpiar);
         acciones.getStyle().set("flex-wrap", "wrap");
 
         layout.add(form, acciones, grid);
-
         return layout;
     }
 
-    private String[] obtenerDatos(TextField[] campos) {
+    // ==========================================
+    // 2. SECCIÓN PEDIDOS
+    // ==========================================
+    private Component crearSeccionPedidos() {
+        VerticalLayout layout = new VerticalLayout();
+        layout.setPadding(false);
+        layout.setSizeFull();
 
-        String[] datos = new String[campos.length];
+        List<Pedidos> lista = new ArrayList<>();
 
-        for (int i = 0; i < campos.length; i++) {
-            datos[i] = campos[i].getValue().trim();
-        }
+        TextField idField = new TextField("ID");
+        TextField clienteIdField = new TextField("ID Cliente");
+        TextField totalField = new TextField("Total");
+        TextField estadoField = new TextField("Estado");
 
-        return datos;
-    }
+        idField.setReadOnly(true);
 
-    private String[] buscarRegistro(List<String[]> registros, String id) {
+        FormLayout form = new FormLayout(idField, clienteIdField, totalField, estadoField);
 
-        for (String[] registro : registros) {
-            if (registro[0].equals(id)) {
-                return registro;
+        Grid<Pedidos> grid = new Grid<>(Pedidos.class, false);
+        grid.addColumn(Pedidos::getId).setHeader("ID").setAutoWidth(true);
+        grid.addColumn(Pedidos::getClienteId).setHeader("ID Cliente").setAutoWidth(true);
+        grid.addColumn(Pedidos::getFechaPedido).setHeader("Fecha Pedido").setAutoWidth(true);
+        grid.addColumn(Pedidos::getTotal).setHeader("Total").setAutoWidth(true);
+        grid.addColumn(Pedidos::getEstado).setHeader("Estado").setAutoWidth(true);
+
+        grid.setItems(lista);
+
+        grid.asSingleSelect().addValueChangeListener(event -> {
+            Pedidos p = event.getValue();
+            if (p != null) {
+                idField.setValue(p.getId() != null ? p.getId().toString() : "");
+                clienteIdField.setValue(p.getClienteId() != null ? p.getClienteId().toString() : "");
+                totalField.setValue(p.getTotal() != null ? p.getTotal().toString() : "");
+                estadoField.setValue(p.getEstado() != null ? p.getEstado() : "");
             }
-        }
+        });
 
-        return null;
+        Button btnCrear = new Button("Crear", event -> {
+            Pedidos p = new Pedidos(
+                pedidoIdCounter++,
+                parseLong(clienteIdField.getValue()),
+                LocalDateTime.now(),
+                parseBigDecimal(totalField.getValue()),
+                estadoField.getValue().trim().isEmpty() ? "pendiente" : estadoField.getValue().trim()
+            );
+            lista.add(p);
+            grid.setItems(lista);
+            limpiarCampos(idField, clienteIdField, totalField, estadoField);
+            Notification.show("Pedido creado correctamente");
+        });
+        btnCrear.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button btnConsultar = new Button("Consultar", event -> {
+            Long id = parseLong(idField.getValue());
+            Pedidos encontrado = lista.stream().filter(x -> x.getId().equals(id)).findFirst().orElse(null);
+            if (encontrado != null) {
+                grid.asSingleSelect().setValue(encontrado);
+                Notification.show("Pedido encontrado");
+            } else {
+                Notification.show("No se encontró el pedido");
+            }
+        });
+
+        Button btnActualizar = new Button("Actualizar", event -> {
+            Long id = parseLong(idField.getValue());
+            Pedidos encontrado = lista.stream().filter(x -> x.getId().equals(id)).findFirst().orElse(null);
+            if (encontrado == null) {
+                Notification.show("Selecciona un pedido de la tabla");
+                return;
+            }
+            encontrado.setClienteId(parseLong(clienteIdField.getValue()));
+            encontrado.setTotal(parseBigDecimal(totalField.getValue()));
+            encontrado.setEstado(estadoField.getValue().trim());
+            grid.setItems(lista);
+            Notification.show("Pedido actualizado correctamente");
+        });
+
+        Button btnEliminar = new Button("Eliminar", event -> {
+            Long id = parseLong(idField.getValue());
+            Pedidos encontrado = lista.stream().filter(x -> x.getId().equals(id)).findFirst().orElse(null);
+            if (encontrado == null) {
+                Notification.show("No se encontró el pedido");
+                return;
+            }
+            lista.remove(encontrado);
+            grid.setItems(lista);
+            limpiarCampos(idField, clienteIdField, totalField, estadoField);
+            grid.asSingleSelect().clear();
+            Notification.show("Pedido eliminado correctamente");
+        });
+        btnEliminar.addThemeVariants(ButtonVariant.LUMO_ERROR);
+
+        Button btnLimpiar = new Button("Limpiar", event -> {
+            limpiarCampos(idField, clienteIdField, totalField, estadoField);
+            grid.asSingleSelect().clear();
+        });
+
+        HorizontalLayout acciones = new HorizontalLayout(btnCrear, btnConsultar, btnActualizar, btnEliminar, btnLimpiar);
+        acciones.getStyle().set("flex-wrap", "wrap");
+
+        layout.add(form, acciones, grid);
+        return layout;
     }
 
-    private void limpiar(TextField[] campos) {
+    // ==========================================
+    // 3. SECCIÓN DETALLE PEDIDO
+    // ==========================================
+    private Component crearSeccionDetallePedido() {
+        VerticalLayout layout = new VerticalLayout();
+        layout.setPadding(false);
+        layout.setSizeFull();
 
-        for (TextField campo : campos) {
-            campo.clear();
-        }
+        List<DetallePedido> lista = new ArrayList<>();
+
+        TextField idField = new TextField("ID");
+        TextField pedidoIdField = new TextField("ID Pedido");
+        TextField productoIdField = new TextField("ID Producto");
+        TextField cantidadField = new TextField("Cantidad");
+        TextField precioUnitarioField = new TextField("Precio Unitario");
+        TextField subtotalField = new TextField("Subtotal");
+
+        idField.setReadOnly(true);
+
+        FormLayout form = new FormLayout(idField, pedidoIdField, productoIdField, cantidadField, precioUnitarioField, subtotalField);
+
+        Grid<DetallePedido> grid = new Grid<>(DetallePedido.class, false);
+        grid.addColumn(DetallePedido::getId).setHeader("ID").setAutoWidth(true);
+        grid.addColumn(DetallePedido::getPedidoId).setHeader("ID Pedido").setAutoWidth(true);
+        grid.addColumn(DetallePedido::getProductoId).setHeader("ID Producto").setAutoWidth(true);
+        grid.addColumn(DetallePedido::getCantidad).setHeader("Cantidad").setAutoWidth(true);
+        grid.addColumn(DetallePedido::getPrecioUnitario).setHeader("Precio Unitario").setAutoWidth(true);
+        grid.addColumn(DetallePedido::getSubtotal).setHeader("Subtotal").setAutoWidth(true);
+
+        grid.setItems(lista);
+
+        grid.asSingleSelect().addValueChangeListener(event -> {
+            DetallePedido d = event.getValue();
+            if (d != null) {
+                idField.setValue(d.getId() != null ? d.getId().toString() : "");
+                pedidoIdField.setValue(d.getPedidoId() != null ? d.getPedidoId().toString() : "");
+                productoIdField.setValue(d.getProductoId() != null ? d.getProductoId().toString() : "");
+                cantidadField.setValue(d.getCantidad() != null ? d.getCantidad().toString() : "");
+                precioUnitarioField.setValue(d.getPrecioUnitario() != null ? d.getPrecioUnitario().toString() : "");
+                subtotalField.setValue(d.getSubtotal() != null ? d.getSubtotal().toString() : "");
+            }
+        });
+
+        Button btnCrear = new Button("Crear", event -> {
+            int cant = parseInt(cantidadField.getValue());
+            BigDecimal precio = parseBigDecimal(precioUnitarioField.getValue());
+            BigDecimal subtotal = precio.multiply(BigDecimal.valueOf(cant));
+
+            DetallePedido d = new DetallePedido(
+                detalleIdCounter++,
+                parseLong(pedidoIdField.getValue()),
+                parseLong(productoIdField.getValue()),
+                cant,
+                precio,
+                subtotal
+            );
+            lista.add(d);
+            grid.setItems(lista);
+            subtotalField.setValue(subtotal.toString());
+            limpiarCampos(idField, pedidoIdField, productoIdField, cantidadField, precioUnitarioField, subtotalField);
+            Notification.show("Detalle creado correctamente");
+        });
+        btnCrear.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button btnConsultar = new Button("Consultar", event -> {
+            Long id = parseLong(idField.getValue());
+            DetallePedido encontrado = lista.stream().filter(x -> x.getId().equals(id)).findFirst().orElse(null);
+            if (encontrado != null) {
+                grid.asSingleSelect().setValue(encontrado);
+                Notification.show("Detalle encontrado");
+            } else {
+                Notification.show("No se encontró el detalle");
+            }
+        });
+
+        Button btnActualizar = new Button("Actualizar", event -> {
+            Long id = parseLong(idField.getValue());
+            DetallePedido encontrado = lista.stream().filter(x -> x.getId().equals(id)).findFirst().orElse(null);
+            if (encontrado == null) {
+                Notification.show("Selecciona un detalle de la tabla");
+                return;
+            }
+            int cant = parseInt(cantidadField.getValue());
+            BigDecimal precio = parseBigDecimal(precioUnitarioField.getValue());
+            
+            encontrado.setPedidoId(parseLong(pedidoIdField.getValue()));
+            encontrado.setProductoId(parseLong(productoIdField.getValue()));
+            encontrado.setCantidad(cant);
+            encontrado.setPrecioUnitario(precio);
+            encontrado.setSubtotal(precio.multiply(BigDecimal.valueOf(cant)));
+
+            grid.setItems(lista);
+            Notification.show("Detalle actualizado correctamente");
+        });
+
+        Button btnEliminar = new Button("Eliminar", event -> {
+            Long id = parseLong(idField.getValue());
+            DetallePedido encontrado = lista.stream().filter(x -> x.getId().equals(id)).findFirst().orElse(null);
+            if (encontrado == null) {
+                Notification.show("No se encontró el detalle");
+                return;
+            }
+            lista.remove(encontrado);
+            grid.setItems(lista);
+            limpiarCampos(idField, pedidoIdField, productoIdField, cantidadField, precioUnitarioField, subtotalField);
+            grid.asSingleSelect().clear();
+            Notification.show("Detalle eliminado correctamente");
+        });
+        btnEliminar.addThemeVariants(ButtonVariant.LUMO_ERROR);
+
+        Button btnLimpiar = new Button("Limpiar", event -> {
+            limpiarCampos(idField, pedidoIdField, productoIdField, cantidadField, precioUnitarioField, subtotalField);
+            grid.asSingleSelect().clear();
+        });
+
+        HorizontalLayout acciones = new HorizontalLayout(btnCrear, btnConsultar, btnActualizar, btnEliminar, btnLimpiar);
+        acciones.getStyle().set("flex-wrap", "wrap");
+
+        layout.add(form, acciones, grid);
+        return layout;
     }
-}
+
+    // ==========================================
+    // 4. SECCIÓN USUARIOS
+    // ==========================================
+    private Component crearSeccionUsuarios() {
+        VerticalLayout layout = new VerticalLayout();
+        layout.setPadding(false);
+        layout.setSizeFull();
+
+        List<Usuario> lista = new ArrayList<>();
+
+        TextField idField = new TextField("ID");
+        TextField nombreField = new TextField("Nombre");
+        TextField apellidoField = new TextField("Apellido");
+        TextField emailField = new TextField("Email");
+        TextField telefonoField = new TextField("Teléfono");
+        TextField direccionField = new TextField("Dirección");
+        TextField rolField = new TextField("Rol");
+        TextField estadoField = new TextField("Estado");
+
+        idField.setReadOnly(true);
+
+        FormLayout form = new FormLayout(idField, nombreField, apellidoField, emailField, telefonoField, direccionField, rolField, estadoField);
+
+        Grid<Usuario> grid = new Grid<>(Usuario.class, false);
+        grid.addColumn(Usuario::getId).setHeader("ID").setAutoWidth(true);
+        grid.addColumn(Usuario::getNombre).setHeader("Nombre").setAutoWidth(true);
+        grid.addColumn(Usuario::getApellido).setHeader("Apellido").setAutoWidth(true);
+        grid.addColumn(Usuario::getEmail).setHeader("Email").setAutoWidth(true);
+        grid.addColumn(Usuario::getTelefono).setHeader("Teléfono").setAutoWidth(true);
+        grid.addColumn(Usuario::getRol).setHeader("Rol").setAutoWidth(true);
+        grid.addColumn(Usuario::getEstado).setHeader("Estado").setAutoWidth(true);
+        grid.addColumn(Usuario

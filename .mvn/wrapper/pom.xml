@@ -1,0 +1,4 @@
+<dependency>
+    <groupId>com.vaadin</groupId>
+    <artifactId>vaadin-core</artifactId>
+</dependency>
