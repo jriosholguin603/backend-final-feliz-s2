@@ -1,30 +1,19 @@
 package com.example.model;
 
 import java.time.LocalDateTime;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 
-@Entity
-@Table(name = "usuarios")
 public class Usuario {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // para que sea autogenerado por la BD
+    private Long id;
     private String nombre;
     private String apellido;
     private String email;
     private String telefono;
     private String direccion;
-    private String rol; // 'admin', 'usuario', etc.
-    private String estado; // 'activo', 'inactivo', 'baneado'
+    private String rol;
+    private String estado;
     private LocalDateTime fechaRegistro;
 
-    // ===================
-    // Constructor completo
-    // ===================
+
     public Usuario(Long id, String nombre, String apellido, String email, String telefono,
             String direccion, String rol, String estado, LocalDateTime fechaRegistro) {
         this.id = id;
@@ -38,25 +27,15 @@ public class Usuario {
         this.fechaRegistro = fechaRegistro;
     }
 
-    // ===================
-    // Constructor sin ID
-    // (para insertar nuevos usuarios sin ID)
-    // ===================
     public Usuario(String nombre, String apellido, String email, String telefono,
             String direccion, String rol, String estado, LocalDateTime fechaRegistro) {
         this(null, nombre, apellido, email, telefono, direccion, rol, estado, fechaRegistro);
     }
 
-    // ===================
-    // Constructor vacío
-    // ===================
     public Usuario() {
         this.fechaRegistro = LocalDateTime.now();
     }
 
-    // ===================
-    // Getters y setters
-    // ===================
     public Long getId() {
         return id;
     }
